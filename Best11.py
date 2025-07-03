@@ -39,11 +39,17 @@ if team1 == team2:
     st.warning("Please select two different teams.")
     st.stop()
 
-def load_and_clean_csv(file):
-    df = pd.read_csv(file, encoding='latin1')  # Handles weird Unicode
-    df.columns = [col.strip().replace('\ufeff', '') for col in df.columns]
-    df.columns = [unicodedata.normalize("NFKD", str(col)) for col in df.columns]
-    df[df.columns[0]] = df[df.columns[0]].apply(lambda x: unicodedata.normalize("NFKD", str(x)))
+def load_and_clean_csv(file):    
+    try:
+        df = pd.read_csv(file, encoding='utf-8-sig')
+    except UnicodeDecodeError:       
+        try:
+            df = pd.read_csv(file, encoding='latin1')
+        except UnicodeDecodeError:
+            df = pd.read_csv(file, encoding='cp1252')   
+    df.columns = [col.strip().replace('\ufeff', '') for col in df.columns]   
+    df.columns = [unicodedata.normalize("NFKD", str(col)).encode('ascii', 'ignore').decode('utf-8') for col in df.columns]
+    df[df.columns[0]] = df[df.columns[0]].apply(lambda x: unicodedata.normalize("NFKD", str(x)).encode('ascii', 'ignore').decode('utf-8'))
     return df
 
 df1 = load_and_clean_csv(f"{team1}.csv")
